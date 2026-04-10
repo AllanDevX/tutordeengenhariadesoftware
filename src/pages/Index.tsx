@@ -4,6 +4,8 @@ import ChatMessage, { Message } from "@/components/ChatMessage";
 import ChatInput from "@/components/ChatInput";
 import TypingIndicator from "@/components/TypingIndicator";
 import SuggestionChip from "@/components/SuggestionChip";
+import { streamChat } from "@/lib/streamChat";
+import { toast } from "sonner";
 import tutorAvatar from "@/assets/tutor-avatar.png";
 
 const SUGGESTIONS = [
@@ -15,16 +17,16 @@ const SUGGESTIONS = [
 
 const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
     }
-  }, [messages, isTyping]);
+  }, [messages, isLoading]);
 
-  const handleSend = (content: string) => {
+  const handleSend = async (content: string) => {
     const userMsg: Message = {
       id: crypto.randomUUID(),
       role: "user",
@@ -32,26 +34,51 @@ const Index = () => {
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, userMsg]);
-    setIsTyping(true);
+    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMsg: Message = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: `Ótima pergunta! Vou responder com base nos materiais da disciplina.\n\n> _Funcionalidade de IA será conectada em breve._\n\nPor enquanto, esta é uma **demonstração visual** do chatbot.`,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-      setIsTyping(false);
-    }, 1500);
+    let assistantSoFar = "";
+    const assistantId = crypto.randomUUID();
+
+    const chatMessages = [...messages, userMsg].map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    try {
+      await streamChat({
+        messages: chatMessages,
+        onDelta: (chunk) => {
+          assistantSoFar += chunk;
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.id === assistantId) {
+              return prev.map((m, i) =>
+                i === prev.length - 1 ? { ...m, content: assistantSoFar } : m
+              );
+            }
+            return [
+              ...prev,
+              { id: assistantId, role: "assistant", content: assistantSoFar, timestamp: new Date() },
+            ];
+          });
+        },
+        onDone: () => setIsLoading(false),
+        onError: (error) => {
+          toast.error(error);
+          setIsLoading(false);
+        },
+      });
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao conectar com o tutor. Tente novamente.");
+      setIsLoading(false);
+    }
   };
 
   const isEmpty = messages.length === 0;
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card px-4 py-3 flex items-center gap-3 shrink-0">
         <div className="w-10 h-10 rounded-full bg-accent border border-border flex items-center justify-center overflow-hidden">
           <img src={tutorAvatar} alt="Tutor" className="w-8 h-8" />
@@ -71,7 +98,6 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Messages area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full px-4 py-12 text-center">
@@ -95,13 +121,12 @@ const Index = () => {
             {messages.map((msg) => (
               <ChatMessage key={msg.id} message={msg} />
             ))}
-            {isTyping && <TypingIndicator />}
+            {isLoading && messages[messages.length - 1]?.role === "user" && <TypingIndicator />}
           </div>
         )}
       </div>
 
-      {/* Input */}
-      <ChatInput onSend={handleSend} disabled={isTyping} />
+      <ChatInput onSend={handleSend} disabled={isLoading} />
     </div>
   );
 };
