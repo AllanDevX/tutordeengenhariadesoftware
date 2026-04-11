@@ -33,9 +33,14 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const skipSyncRef = useRef(false);
 
   // Sync messages when switching conversations
   useEffect(() => {
+    if (skipSyncRef.current) {
+      skipSyncRef.current = false;
+      return;
+    }
     if (activeConversation) {
       setMessages(activeConversation.messages);
     } else {
@@ -54,6 +59,7 @@ const Index = () => {
       // If no active conversation, create one
       let convId = activeId;
       if (!convId) {
+        skipSyncRef.current = true;
         convId = createConversation();
       }
 
