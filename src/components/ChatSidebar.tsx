@@ -125,12 +125,21 @@ export function ChatSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3">
-        {!collapsed && (
-          <p className="text-[10px] text-muted-foreground text-center">
-            {conversations.length} conversa{conversations.length !== 1 ? "s" : ""}
+      <SidebarFooter className="p-3 space-y-2">
+        {!collapsed && user && (
+          <p className="text-[10px] text-muted-foreground text-center truncate">
+            {user.email}
           </p>
         )}
+        <Button
+          variant="ghost"
+          size={collapsed ? "icon" : "default"}
+          className={cn("w-full text-muted-foreground hover:text-destructive", collapsed && "w-9 h-9")}
+          onClick={signOut}
+        >
+          <LogOut className="w-4 h-4" />
+          {!collapsed && <span className="ml-2">Sair</span>}
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );
