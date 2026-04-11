@@ -59,6 +59,7 @@ const Index = () => {
       // If no active conversation, create one
       let convId = activeId;
       if (!convId) {
+        skipSyncRef.current = true;
         convId = createConversation();
       }
 
