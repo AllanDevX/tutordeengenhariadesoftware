@@ -33,6 +33,7 @@ export function ChatSidebar({
   onDelete,
 }: ChatSidebarProps) {
   const { state } = useSidebar();
+  const { user, signOut } = useAuth();
   const collapsed = state === "collapsed";
 
   const formatDate = (dateStr: string) => {
