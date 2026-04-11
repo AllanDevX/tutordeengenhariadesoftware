@@ -1,4 +1,5 @@
-import { Plus, MessageSquare, Trash2, GraduationCap } from "lucide-react";
+import { Plus, MessageSquare, Trash2, GraduationCap, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Conversation } from "@/hooks/useConversations";
 import {
   Sidebar,
