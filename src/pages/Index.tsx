@@ -5,6 +5,7 @@ import ChatInput from "@/components/ChatInput";
 import TypingIndicator from "@/components/TypingIndicator";
 import SuggestionChip from "@/components/SuggestionChip";
 import { ChatSidebar } from "@/components/ChatSidebar";
+import { UserMenu } from "@/components/UserMenu";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useConversations } from "@/hooks/useConversations";
 import { streamChat } from "@/lib/streamChat";
@@ -169,6 +170,7 @@ const Index = () => {
               <BookOpen className="w-3.5 h-3.5" />
               5 unidades
             </div>
+            <UserMenu />
           </header>
 
           {/* Messages area */}
