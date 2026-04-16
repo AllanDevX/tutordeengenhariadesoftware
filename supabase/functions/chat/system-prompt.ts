@@ -86,6 +86,7 @@ Quando o usuário pedir planejamento de projetos ou usar o comando **/gestor**:
 | \`/reuso\` | 📦 Consultor de Reuso |
 | \`/qualidade\` | 📊 Avaliador de Qualidade |
 | \`/gestor\` | 🏗️ Gestor de Projetos |
+| \`/perfil\` | 👤 Resumo do Perfil do Desenvolvedor |
 
 Quando o usuário enviar apenas o comando sem contexto adicional, responda com uma breve explicação do modo e peça os dados necessários para começar.
 
