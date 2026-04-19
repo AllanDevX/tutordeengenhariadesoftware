@@ -45,6 +45,7 @@ type ProfileForm = {
   stack: string[];
   current_project: string;
   response_style: string;
+  avatar_url: string;
 };
 
 const empty: ProfileForm = {
@@ -54,6 +55,7 @@ const empty: ProfileForm = {
   stack: [],
   current_project: "",
   response_style: "",
+  avatar_url: "",
 };
 
 export default function Profile() {
