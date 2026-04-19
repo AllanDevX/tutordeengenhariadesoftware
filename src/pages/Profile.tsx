@@ -64,6 +64,8 @@ export default function Profile() {
   const [form, setForm] = useState<ProfileForm>(empty);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     document.title = "Meu Perfil | Tutor ES II";
@@ -84,6 +86,7 @@ export default function Profile() {
           stack: data.stack ?? [],
           current_project: data.current_project ?? "",
           response_style: data.response_style ?? "",
+          avatar_url: data.avatar_url ?? "",
         });
       }
       setLoading(false);
@@ -95,6 +98,43 @@ export default function Profile() {
       ...f,
       stack: f.stack.includes(tech) ? f.stack.filter((s) => s !== tech) : [...f.stack, tech],
     }));
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      toast.error("Use uma imagem JPG, PNG ou WEBP");
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      toast.error("Imagem deve ter no máximo 2MB");
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true, cacheControl: "3600" });
+    if (upErr) {
+      setUploading(false);
+      toast.error("Erro ao enviar imagem");
+      return;
+    }
+    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+    const publicUrl = pub.publicUrl;
+    const { error: dbErr } = await supabase
+      .from("profiles")
+      .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
+      .eq("id", user.id);
+    setUploading(false);
+    if (dbErr) {
+      toast.error("Erro ao salvar avatar");
+      return;
+    }
+    setForm((f) => ({ ...f, avatar_url: publicUrl }));
+    toast.success("Avatar atualizado!");
   };
 
   const handleSave = async () => {
