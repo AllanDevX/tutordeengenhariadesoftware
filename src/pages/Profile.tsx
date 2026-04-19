@@ -174,6 +174,39 @@ export default function Profile() {
 
       <main className="max-w-2xl mx-auto p-4 sm:p-6">
         <Card className="p-5 sm:p-6 space-y-5">
+          <div className="flex items-center gap-4">
+            <Avatar className="w-20 h-20 border border-border">
+              <AvatarImage src={form.avatar_url || undefined} alt="Avatar" />
+              <AvatarFallback className="bg-primary/10 text-primary">
+                <User className="w-8 h-8" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4 mr-2" />
+                )}
+                {uploading ? "Enviando…" : "Alterar foto"}
+              </Button>
+              <p className="text-xs text-muted-foreground">JPG, PNG ou WEBP — até 2MB</p>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="display_name">Nome de exibição</Label>
             <Input
