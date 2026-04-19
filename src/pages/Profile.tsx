@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, User } from "lucide-react";
+import { ArrowLeft, Save, Upload, User, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,7 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
+
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2MB
+const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const STACK_OPTIONS = [
   "Python (Flask)",
@@ -41,6 +45,7 @@ type ProfileForm = {
   stack: string[];
   current_project: string;
   response_style: string;
+  avatar_url: string;
 };
 
 const empty: ProfileForm = {
@@ -50,6 +55,7 @@ const empty: ProfileForm = {
   stack: [],
   current_project: "",
   response_style: "",
+  avatar_url: "",
 };
 
 export default function Profile() {
@@ -58,6 +64,8 @@ export default function Profile() {
   const [form, setForm] = useState<ProfileForm>(empty);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     document.title = "Meu Perfil | Tutor ES II";
@@ -78,6 +86,7 @@ export default function Profile() {
           stack: data.stack ?? [],
           current_project: data.current_project ?? "",
           response_style: data.response_style ?? "",
+          avatar_url: data.avatar_url ?? "",
         });
       }
       setLoading(false);
@@ -89,6 +98,43 @@ export default function Profile() {
       ...f,
       stack: f.stack.includes(tech) ? f.stack.filter((s) => s !== tech) : [...f.stack, tech],
     }));
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      toast.error("Use uma imagem JPG, PNG ou WEBP");
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      toast.error("Imagem deve ter no máximo 2MB");
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true, cacheControl: "3600" });
+    if (upErr) {
+      setUploading(false);
+      toast.error("Erro ao enviar imagem");
+      return;
+    }
+    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+    const publicUrl = pub.publicUrl;
+    const { error: dbErr } = await supabase
+      .from("profiles")
+      .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
+      .eq("id", user.id);
+    setUploading(false);
+    if (dbErr) {
+      toast.error("Erro ao salvar avatar");
+      return;
+    }
+    setForm((f) => ({ ...f, avatar_url: publicUrl }));
+    toast.success("Avatar atualizado!");
   };
 
   const handleSave = async () => {
@@ -128,6 +174,39 @@ export default function Profile() {
 
       <main className="max-w-2xl mx-auto p-4 sm:p-6">
         <Card className="p-5 sm:p-6 space-y-5">
+          <div className="flex items-center gap-4">
+            <Avatar className="w-20 h-20 border border-border">
+              <AvatarImage src={form.avatar_url || undefined} alt="Avatar" />
+              <AvatarFallback className="bg-primary/10 text-primary">
+                <User className="w-8 h-8" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4 mr-2" />
+                )}
+                {uploading ? "Enviando…" : "Alterar foto"}
+              </Button>
+              <p className="text-xs text-muted-foreground">JPG, PNG ou WEBP — até 2MB</p>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="display_name">Nome de exibição</Label>
             <Input
