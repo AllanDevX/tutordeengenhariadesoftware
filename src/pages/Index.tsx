@@ -6,6 +6,7 @@ import TypingIndicator from "@/components/TypingIndicator";
 import SuggestionChip from "@/components/SuggestionChip";
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { UserMenu } from "@/components/UserMenu";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useConversations } from "@/hooks/useConversations";
 import { streamChat } from "@/lib/streamChat";
@@ -168,8 +169,9 @@ const Index = () => {
             </div>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent text-accent-foreground text-xs font-medium">
               <BookOpen className="w-3.5 h-3.5" />
-              5 unidades
+              13 módulos
             </div>
+            <ThemeToggle />
             <UserMenu />
           </header>
 
