@@ -43,7 +43,7 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
           </div>
         )}
         <p className={`text-[10px] mt-1.5 ${isUser ? "text-chat-user-foreground/60" : "text-muted-foreground"}`}>
-          {message.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+          {new Date(message.timestamp).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
         </p>
       </div>
     </div>
